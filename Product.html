@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasty Lady - Products</title>
+    <style>
+        :root {
+            --primary-color: #f8f9fa;
+            --secondary-color: #e63946;
+            --accent-color: #ff9500;
+            --dark: #1d3557;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        header {
+            background: var(--primary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .products-grid {
+            max-width: 1200px;
+            margin: 100px auto 2rem;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-title {
+            font-size: 1.2rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .product-description {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .quantity-btn {
+            background: none;
+            border: 1px solid #ddd;
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quantity-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .add-to-cart {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-to-cart:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        @keyframes addedToCart {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .added-animation {
+            animation: addedToCart 0.5s ease-out;
+        }
+
+        /* Fire effects from your existing styles */
+        @keyframes fire {
+            0% { box-shadow: 0 0 4px var(--accent-color); }
+            50% { box-shadow: 0 0 12px var(--accent-color), 0 0 20px var(--secondary-color); }
+            100% { box-shadow: 0 0 4px var(--accent-color); }
+        }
+
+        .fire-effect {
+            animation: fire 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Tasty Lady</div>
+            <div class="cart-icon" onclick="goToCheckout()">
+                🛒 <span class="cart-count">0</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="products-grid">
+        <!-- Products will be dynamically loaded here -->
+    </div>
+
+    <script>
+        // Check login status first
+        function checkLogin() {
+            const sessionToken = localStorage.getItem('sessionToken');
+            const userEmail = localStorage.getItem('userEmail');
+            
+            if (!sessionToken || !userEmail) {
+                window.location.href = 'Login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Products data
+        const products = [
+            {
+                id: 1,
+                name: "Classic Chili Paste",
+                price: 9.99,
+                description: "Our signature blend of spices and chilies",
+                image: "product1.jpg"
+            },
+            {
+                id: 2,
+                name: "Spicy Garlic Paste",
+                price: 11.99,
+                description: "Perfect combination of heat and flavor",
+                image: "product2.jpg"
+            },
+            {
+                id: 3,
+                name: "Sweet Chili Paste",
+                price: 10.99,
+                description: "Balanced sweetness with a spicy kick",
+                image: "product3.jpg"
+            }
+        ];
+
+        // Cart management
+        let cart = [];
+        
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.querySelector('.cart-count').textContent = count;
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const quantity = parseInt(document.querySelector(`#quantity-${productId}`).textContent);
+            
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({...product, quantity});
+            }
+            
+            updateCartCount();
+            
+            // Add animation effect
+            const button = document.querySelector(`#add-btn-${productId}`);
+            button.classList.add('fire-effect', 'added-animation');
+            setTimeout(() => {
+                button.classList.remove('fire-effect', 'added-animation');
+            }, 500);
+        }
+
+        function updateQuantity(productId, delta) {
+            const quantityElement = document.querySelector(`#quantity-${productId}`);
+            let quantity = parseInt(quantityElement.textContent) + delta;
+            quantity = Math.max(1, quantity); // Minimum quantity is 1
+            quantityElement.textContent = quantity;
+        }
+
+        function goToCheckout() {
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            
+            // Encode cart data for URL
+            const cartData = encodeURIComponent(JSON.stringify(cart));
+            window.location.href = `Checkout.html?cart=${cartData}`;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!checkLogin()) return;
+
+            const productsGrid = document.querySelector('.products-grid');
+            
+            products.forEach(product => {
+                const productElement = `
+                    <div class="product-card">
+                        <img src="${product.image}" alt="${product.name}" class="product-image">
+                        <div class="product-info">
+                            <h3 class="product-title">${product.name}</h3>
+                            <div class="product-price">$${product.price.toFixed(2)}</div>
+                            <p class="product-description">${product.description}</p>
+                            <div class="quantity-control">
+                                <button class="quantity-btn" onclick="updateQuantity(${product.id}, -1)">-</button>
+                                <span id="quantity-${product.id}">1</span>
+                                <button class="quantity-btn" onclick="updateQuantity(${product.id}, 1)">+</button>
+                            </div>
+                            <button id="add-btn-${product.id}" class="add-to-cart" onclick="addToCart(${product.id})">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productsGrid.insertAdjacentHTML('beforeend', productElement);
+            });
+        });
+    </script>
+</body>
+</html>
